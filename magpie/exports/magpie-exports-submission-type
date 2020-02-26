@@ -39,6 +39,7 @@ __Magpie_calc_slurm_magpie_timelimit () {
     fi
 }
 
+
 __Magpie_handle_job_name_corner_cases () {
     # Handle special corner cases where user's job name may not
     # play nice, as we use it in file paths and what not
@@ -131,6 +132,16 @@ then
     # Run State
     walltime=$(echo $jobinfo | awk '{for(i=1;i<=NF;i++){ if($i=="RUNLIMIT"){printf "%.0f\n", $((i+1))} } }')
     export MAGPIE_TIMELIMIT_MINUTES=${walltime}
+    __Magpie_handle_job_name_corner_cases
+elif [ "${MAGPIE_SUBMISSION_TYPE}" == "qsubpbsspark" ]
+then
+    export MAGPIE_CLUSTER_NODERANK="$(($(echo ${PBS_NODES} | sed 's/,/\n/g' | grep -n ${HOSTNAME} | cut -f1 -d:) - 1))"
+    export MAGPIE_NODE_COUNT=2
+    export MAGPIE_NODELIST=$PBS_NODES
+    export MAGPIE_JOB_NAME="${PBS_JOBNAME}"
+    export MAGPIE_JOB_ID="${PBS_JOBID}"
+    #Hardcoded
+    export MAGPIE_TIMELIMIT_MINUTES=100
     __Magpie_handle_job_name_corner_cases
 else
     Magpie_output_internal_error "Invalid MAGPIE_SUBMISSION_TYPE = ${MAGPIE_SUBMISSION_TYPE}"
